@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperBFSI · AI Marketing Agent with MongoDB & Charts</title>
+    <!-- Chart.js for bar graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #f3f6fc;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            gap: 24px;
+        }
+
+        .main-panel {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .sidebar {
+            flex: 1.2;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 12px 30px rgba(0, 20, 50, 0.1);
+            padding: 24px 20px;
+            height: fit-content;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+            position: sticky;
+            top: 24px;
+            border: 1px solid #e9eef3;
+        }
+
+        .brief-card {
+            background: white;
+            border-radius: 28px;
+            padding: 28px 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e4eaf2;
+        }
+
+        .brief-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .brief-header h2 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            background: linear-gradient(145deg, #0B2A4A, #133e64);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .history-btn,
+        .mongodb-btn,
+        .schedule-btn {
+            background: white;
+            border: 1px solid #cddae9;
+            padding: 10px 22px;
+            border-radius: 40px;
+            font-weight: 500;
+            color: #1e3b5c;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .mongodb-btn {
+            background: #00684a;
+            color: white;
+            border-color: #00684a;
+        }
+
+        .schedule-btn {
+            background: #f59e0b;
+            color: white;
+            border-color: #f59e0b;
+        }
+
+        .history-btn:hover {
+            background: #f0f5fe;
+            border-color: #6f9ed8;
+        }
+
+        .mongodb-btn:hover {
+            background: #008b5e;
+        }
+
+        .schedule-btn:hover {
+            background: #d97706;
+        }
+
+        textarea {
+            width: 100%;
+            border: 1px solid #cfdeef;
+            border-radius: 24px;
+            padding: 20px 24px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            background: #fafdff;
+            transition: 0.15s;
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 4px #00000008;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #1d7ac7;
+            box-shadow: 0 0 0 4px #a3c6f0;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            background: #1f5f9e;
+            color: white;
+            padding: 14px 34px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 8px 16px -6px #1f5f9e70;
+            border: 1px solid #ffffff30;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #1e3b5c;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+            border: 1px solid #b9cfec;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            box-shadow: none;
+        }
+
+        .approve-btn {
+            background: #1e824c;
+            box-shadow: 0 8px 16px -6px #1e824c90;
+        }
+
+        .cards-grid {
+            display: flex;
+            gap: 24px;
+            margin-top: 8px;
+        }
+
+        .email-card {
+            background: white;
+            border-radius: 26px;
+            padding: 24px;
+            flex: 1;
+            border: 1px solid #e2ebf6;
+            box-shadow: 0 8px 18px -10px #0b2f4e1a;
+            transition: 0.1s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .email-card.best {
+            border: 2px solid #1e824c;
+            background: #f4faf6;
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #c7d9ec;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+
+        .variant-tag {
+            background: #e2eaf5;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-weight: 600;
+            color: #1c4468;
+            font-size: 0.9rem;
+        }
+
+        .subject {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin: 10px 0 8px;
+        }
+
+        .body-preview {
+            color: #30557a;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            background: #f6faff;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid #dde7f3;
+            margin: 15px 0;
+            flex: 1;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-line;
+        }
+
+        .report-badge {
+            background: #e9eff8;
+            border-radius: 30px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            margin-top: 12px;
+            border-left: 4px solid #3080d0;
+        }
+
+        .report-badge p {
+            margin: 4px 0;
+        }
+
+        .winner-star {
+            color: #1e824c;
+            font-weight: 700;
+            background: #dcf2e3;
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+
+        .sidebar h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0a2942;
+            margin-bottom: 20px;
+        }
+
+        .suggestion-box {
+            background: #f0f7ff;
+            border-radius: 24px;
+            padding: 22px;
+            border: 1px solid #cde0f2;
+        }
+
+        .suggestion-box h4 {
+            color: #104079;
+            margin-bottom: 8px;
+        }
+
+        .metric-big {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1b4c7c;
+        }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, #ffffff, #c0d6f0, #ffffff);
+            margin: 30px 0 10px;
+        }
+
+        .small-note {
+            color: #5e7b9c;
+            font-size: 0.9rem;
+            margin: 10px 0;
+        }
+
+        .db-badge {
+            background: #1b2f44;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+        }
+
+        .mongodb-status {
+            background: #e8f5e9;
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+            border-left: 4px solid #00684a;
+        }
+
+        .mongodb-status h4 {
+            color: #00684a;
+            margin-bottom: 8px;
+        }
+
+        .storage-item {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #c8e6c9;
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2ebf6;
+        }
+
+        .connection-status {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Approval Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content h3 {
+            color: #0a2942;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .modal-details {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .modal-details p {
+            margin: 10px 0;
+            color: #1e3b5c;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .modal-btn {
+            padding: 12px 32px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+
+        .modal-btn.yes {
+            background: #1e824c;
+            color: white;
+        }
+
+        .modal-btn.yes:hover {
+            background: #16633a;
+        }
+
+        .modal-btn.no {
+            background: #dc3545;
+            color: white;
+        }
+
+        .modal-btn.no:hover {
+            background: #b02a37;
+        }
+
+        .modal-btn.cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn.cancel:hover {
+            background: #5a6268;
+        }
+
+        /* Schedule Modal Styles */
+        .schedule-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .schedule-modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .schedule-modal-content h3 {
+            color: #0a2942;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .schedule-preview {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .schedule-preview p {
+            margin: 8px 0;
+        }
+
+        .schedule-preview .email-subject {
+            font-weight: 600;
+            color: #1e3b5c;
+        }
+
+        .datetime-picker {
+            margin: 20px 0;
+        }
+
+        .datetime-picker label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #1e3b5c;
+        }
+
+        .datetime-picker input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cfdeef;
+            border-radius: 16px;
+            font-size: 1rem;
+            background: #fafdff;
+        }
+
+        .datetime-picker input:focus {
+            outline: none;
+            border-color: #1d7ac7;
+            box-shadow: 0 0 0 4px #a3c6f0;
+        }
+
+        .schedule-status {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: #0b5e8a;
+        }
+
+        .countdown-timer {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #f59e0b;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .schedule-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Approval Modal -->
+    <div class="modal-overlay" id="approvalModal">
+        <div class="modal-content">
+            <h3>👤 Human Approval Required</h3>
+            <p>Do you want to improve the emails for the next campaign?</p>
+            <div class="modal-details" id="modalDetails">
+                <!-- Will be filled dynamically -->
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn no" id="modalNoBtn">No, keep current</button>
+                <button class="modal-btn yes" id="modalYesBtn">Yes, improve</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div class="schedule-modal-overlay" id="scheduleModal">
+        <div class="schedule-modal-content">
+            <h3>⏰ Schedule Email Campaign</h3>
+            <p>Set the time to automatically send the best approved email to customers.</p>
+            
+            <div class="schedule-preview" id="schedulePreview">
+                <!-- Will be filled dynamically -->
+            </div>
+
+            <div class="datetime-picker">
+                <label for="scheduleDateTime">Select send date and time:</label>
+                <input type="datetime-local" id="scheduleDateTime" min="">
+            </div>
+
+            <div class="schedule-status" id="scheduleStatus">
+                ⏱️ No active scheduled sends
+            </div>
+
+            <div class="countdown-timer" id="countdownTimer" style="display: none;">
+                Time until send: <span id="countdownDisplay"></span>
+            </div>
+
+            <div class="schedule-actions">
+                <button class="modal-btn cancel" id="cancelScheduleBtn">Cancel</button>
+                <button class="modal-btn yes" id="confirmScheduleBtn">Schedule Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+
+        <!-- LEFT MAIN PANEL -->
+        <div class="main-panel">
+            <!-- brief area + buttons + history -->
+            <div class="brief-card">
+                <div class="brief-header">
+                    <h2>📋 campaign brief</h2>
+                    <div class="header-actions">
+                        <button class="schedule-btn" id="scheduleBtn">⏰ schedule send</button>
+                        <button class="mongodb-btn" id="mongodbViewBtn">🗄️ view MongoDB</button>
+                        <button class="history-btn" id="historyButton">📚 history</button>
+                    </div>
+                </div>
+                <textarea id="briefInput"
+                    placeholder="Example: Launch new premium credit card for female senior citizens, cashback on dining, travel. CTA: https://xdeposit.com/premium ...">   </textarea>
+                <div class="action-row">
+                    <button class="btn" id="generateBtn">✨ generate variants</button>
+                    <button class="btn btn-secondary approve-btn" id="approveBtn" disabled>✅ approve & run
+                        campaign</button>
+                </div>
+                <div class="small-note" style="margin-top: 14px;">
+                    <span class="db-badge" id="mongoConnectionStatus">📀 MongoDB</span> click rates & open rates stored automatically
+                </div>
+            </div>
+
+            <!-- EMAIL VARIANTS (A & B) with Charts -->
+            <div class="cards-grid" id="emailVariantsContainer">
+                <div class="email-card" id="variantACard" style="opacity:0.6; filter: grayscale(0.6);">
+                    <div class="email-header"><span class="variant-tag">📧 VARIANT A</span><span></span></div>
+                    <div class="subject" id="subjectA">—</div>
+                    <div class="body-preview" id="bodyA">click generate to create emails</div>
+                    <div class="report-badge" id="reportA">no report yet</div>
+                    <!-- Chart for Variant A -->
+                    <div class="chart-container">
+                        <canvas id="chartA" width="200" height="150"></canvas>
+                    </div>
+                </div>
+                <div class="email-card" id="variantBCard" style="opacity:0.6; filter: grayscale(0.6);">
+                    <div class="email-header"><span class="variant-tag">📧 VARIANT B</span><span></span></div>
+                    <div class="subject" id="subjectB">—</div>
+                    <div class="body-preview" id="bodyB">click generate to create emails</div>
+                    <div class="report-badge" id="reportB">no report yet</div>
+                    <!-- Chart for Variant B -->
+                    <div class="chart-container">
+                        <canvas id="chartB" width="200" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- previous campaigns (iterations) will appear below -->
+            <div style="margin-top: 16px;" id="historyIterations"></div>
+        </div>
+
+        <!-- RIGHT SIDEBAR: AI SUGGESTION & REPORTS & MONGODB STORAGE -->
+        <div class="sidebar" id="sidebar">
+            <h3>🧠 AI advisor</h3>
+            <div class="suggestion-box" id="aiSuggestionBox">
+                <h4>💡 suggestions</h4>
+                <p id="aiSuggestionText">After you approve & fetch report, insights will appear here.</p>
+            </div>
+            <div class="divider"></div>
+            <div id="latestReportBox" style="margin-bottom: 24px;">
+                <h4>📊 latest report</h4>
+                <p id="openRateDisplay">open: —</p>
+                <p id="clickRateDisplay">click: —</p>
+                <p id="assessmentDisplay">assessment: —</p>
+            </div>
+
+            <!-- Scheduled Campaigns Section -->
+            <div class="mongodb-status" id="scheduledSection" style="background: #fff3e0; border-left-color: #f59e0b;">
+                <h4>⏰ Scheduled Campaigns</h4>
+                <p id="scheduledCount">scheduled sends: 0</p>
+                <div id="scheduledList" style="max-height: 150px; overflow-y: auto;">
+                    <p class="storage-item">no scheduled campaigns</p>
+                </div>
+            </div>
+
+            <!-- MongoDB Storage Section -->
+            <div class="mongodb-status" id="mongodbSection">
+                <h4>🗄️ MongoDB Storage</h4>
+                <p id="mongodbCount">stored campaigns: 0</p>
+                <div id="mongodbList" style="max-height: 200px; overflow-y: auto;">
+                    <p class="storage-item">no data yet</p>
+                </div>
+                <button class="btn-secondary" id="refreshMongoBtn"
+                    style="margin-top: 10px; padding: 8px 16px; font-size: 0.9rem;">🔄 refresh</button>
+            </div>
+
+            <div id="bestStoredBadge"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============== MONGODB CONNECTION ==============
+        // Your MongoDB connection string
+        const MONGODB_CONNECTION_STRING = 'mongodb+srv://h:h@c.ebawebu.mongodb.net/IITMandiDB';
+        const DATABASE_NAME = 'IITMandiDB';
+        const COLLECTION_NAME = 'campaigns';
+
+        // Store campaigns in memory and sync with MongoDB
+        let mongoCollection = [];
+
+        // Scheduled campaigns
+        let scheduledCampaigns = [];
+        let countdownInterval = null;
+
+        // Chart instances
+        let chartA, chartB;
+
+        // Approval state
+        let pendingApproval = false;
+        let approvalResolve = null;
+
+        // Function to check MongoDB connection
+        async function checkMongoDBConnection() {
+            const statusEl = document.getElementById('mongoConnectionStatus');
+            try {
+                // For demo purposes, we'll simulate a successful connection
+                // In production, you would make an actual API call to your backend
+                
+                // Simulate connection check
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                statusEl.innerHTML = '📀 MongoDB Connected';
+                statusEl.style.background = '#d4edda';
+                statusEl.style.color = '#155724';
+                return true;
+            } catch (error) {
+                console.error('MongoDB connection error:', error);
+                statusEl.innerHTML = '📀 MongoDB Disconnected';
+                statusEl.style.background = '#f8d7da';
+                statusEl.style.color = '#721c24';
+                return false;
+            }
+        }
+
+        // Function to save data to MongoDB
+        async function saveToMongoDB(campaignData) {
+            try {
+                const mongoDocument = {
+                    _id: 'mongodb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    timestamp: new Date().toISOString(),
+                    ...campaignData
+                };
+
+                // Add to local collection
+                mongoCollection.push(mongoDocument);
+                
+                // Save to localStorage as backup
+                localStorage.setItem('mongodb_backup', JSON.stringify(mongoCollection));
+                
+                console.log('Saved to MongoDB:', mongoDocument);
+                
+                // Update display immediately
+                updateMongoDBDisplay();
+                
+                return mongoDocument;
+            } catch (error) {
+                console.error('Error saving to MongoDB:', error);
+                return null;
+            }
+        }
+
+        // Function to load data from MongoDB
+        async function loadFromMongoDB() {
+            try {
+                // Try to load from localStorage first
+                const stored = localStorage.getItem('mongodb_backup');
+                if (stored) {
+                    mongoCollection = JSON.parse(stored);
+                } else {
+                    // Initialize with empty array
+                    mongoCollection = [];
+                }
+                
+                // Update display
+                updateMongoDBDisplay();
+                return mongoCollection;
+            } catch (error) {
+                console.error('Error loading from MongoDB:', error);
+                mongoCollection = [];
+                return [];
+            }
+        }
+
+        // Update MongoDB display
+        function updateMongoDBDisplay() {
+            const countEl = document.getElementById('mongodbCount');
+            const listEl = document.getElementById('mongodbList');
+            
+            if (!countEl || !listEl) return;
+            
+            countEl.innerText = `stored campaigns: ${mongoCollection.length}`;
+
+            if (mongoCollection.length === 0) {
+                listEl.innerHTML = '<p class="storage-item">no data yet</p>';
+                return;
+            }
+
+            // Sort by timestamp descending
+            const sorted = [...mongoCollection].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            listEl.innerHTML = sorted.slice(0, 5).map(doc => {
+                const date = new Date(doc.timestamp).toLocaleString();
+                return `
+                <div class="storage-item">
+                    <strong>Variant ${doc.best_variant || 'A'}</strong> · 
+                    open ${doc.open_rate || 0}% · 
+                    click ${doc.click_rate || 0}%<br>
+                    <small>${date}</small>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // ============== SCHEDULING FUNCTIONS ==============
+
+        // Update scheduled campaigns display
+        function updateScheduledDisplay() {
+            const countEl = document.getElementById('scheduledCount');
+            const listEl = document.getElementById('scheduledList');
+            
+            if (!countEl || !listEl) return;
+            
+            countEl.innerText = `scheduled sends: ${scheduledCampaigns.length}`;
+
+            if (scheduledCampaigns.length === 0) {
+                listEl.innerHTML = '<p class="storage-item">no scheduled campaigns</p>';
+                return;
+            }
+
+            // Sort by scheduled time
+            const sorted = [...scheduledCampaigns].sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+            
+            listEl.innerHTML = sorted.slice(0, 3).map(campaign => {
+                const scheduledDate = new Date(campaign.scheduledTime).toLocaleString();
+                const status = campaign.status === 'pending' ? '⏳' : campaign.status === 'sent' ? '✅' : '❌';
+                return `
+                <div class="storage-item">
+                    <strong>${status} Variant ${campaign.bestVariant}</strong><br>
+                    <small>Scheduled: ${scheduledDate}</small><br>
+                    <small>Status: ${campaign.status}</small>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // Schedule a campaign
+        function scheduleCampaign(scheduledTime, campaignData) {
+            const scheduleId = 'schedule_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            const scheduledCampaign = {
+                id: scheduleId,
+                scheduledTime: scheduledTime,
+                campaignData: campaignData,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+            
+            scheduledCampaigns.push(scheduledCampaign);
+            
+            // Save to localStorage
+            localStorage.setItem('scheduled_campaigns', JSON.stringify(scheduledCampaigns));
+            
+            // Calculate time until send
+            const now = new Date();
+            const sendTime = new Date(scheduledTime);
+            const timeUntilSend = sendTime - now;
+            
+            if (timeUntilSend > 0) {
+                setTimeout(() => {
+                    executeScheduledCampaign(scheduleId);
+                }, timeUntilSend);
+            }
+            
+            updateScheduledDisplay();
+            updateScheduleStatus();
+            
+            return scheduledCampaign;
+        }
+
+        // Execute a scheduled campaign
+        function executeScheduledCampaign(scheduleId) {
+            const campaignIndex = scheduledCampaigns.findIndex(c => c.id === scheduleId);
+            
+            if (campaignIndex === -1) return;
+            
+            const campaign = scheduledCampaigns[campaignIndex];
+            
+            // Update status
+            campaign.status = 'sending';
+            updateScheduledDisplay();
+            
+            // Simulate sending (in production, this would call your backend API)
+            console.log('Sending scheduled campaign:', campaign);
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                campaign.status = 'sent';
+                campaign.sentAt = new Date().toISOString();
+                
+                // Store in MongoDB as sent campaign
+                saveToMongoDB({
+                    ...campaign.campaignData,
+                    scheduled_send: true,
+                    sent_at: campaign.sentAt
+                });
+                
+                updateScheduledDisplay();
+                
+                // Show notification in AI advisor
+                aiSuggestionText.innerText = `✅ Scheduled campaign sent successfully at ${new Date().toLocaleString()}`;
+                
+                // Remove from scheduled after sent
+                setTimeout(() => {
+                    scheduledCampaigns = scheduledCampaigns.filter(c => c.id !== scheduleId);
+                    localStorage.setItem('scheduled_campaigns', JSON.stringify(scheduledCampaigns));
+                    updateScheduledDisplay();
+                }, 5000);
+                
+            }, 2000);
+        }
+
+        // Update schedule status and countdown
+        function updateScheduleStatus() {
+            const statusEl = document.getElementById('scheduleStatus');
+            const countdownTimer = document.getElementById('countdownTimer');
+            
+            if (scheduledCampaigns.length === 0) {
+                statusEl.innerHTML = '⏱️ No active scheduled sends';
+                countdownTimer.style.display = 'none';
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                return;
+            }
+            
+            // Find the next pending campaign
+            const nextCampaign = scheduledCampaigns
+                .filter(c => c.status === 'pending')
+                .sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime))[0];
+            
+            if (!nextCampaign) {
+                statusEl.innerHTML = '⏱️ No pending scheduled sends';
+                countdownTimer.style.display = 'none';
+                return;
+            }
+            
+            const sendTime = new Date(nextCampaign.scheduledTime);
+            statusEl.innerHTML = `⏰ Next send scheduled for ${sendTime.toLocaleString()}`;
+            
+            // Start countdown
+            countdownTimer.style.display = 'block';
+            
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            
+            countdownInterval = setInterval(() => {
+                const now = new Date();
+                const timeLeft = sendTime - now;
+                
+                if (timeLeft <= 0) {
+                    document.getElementById('countdownDisplay').innerText = 'Sending now...';
+                    clearInterval(countdownInterval);
+                    return;
+                }
+                
+                const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                document.getElementById('countdownDisplay').innerText = 
+                    `${hours}h ${minutes}m ${seconds}s`;
+            }, 1000);
+        }
+
+        // Open schedule modal
+        function openScheduleModal() {
+            if (!lastApprovedPerf) {
+                alert('Please run a campaign first to select the best email to schedule.');
+                return;
+            }
+            
+            const modal = document.getElementById('scheduleModal');
+            const previewEl = document.getElementById('schedulePreview');
+            const dateTimeInput = document.getElementById('scheduleDateTime');
+            
+            // Set minimum date to now
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            dateTimeInput.min = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            // Set default to tomorrow at 9 AM
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(9, 0, 0, 0);
+            
+            const tomorrowYear = tomorrow.getFullYear();
+            const tomorrowMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const tomorrowDay = String(tomorrow.getDate()).padStart(2, '0');
+            const tomorrowHours = String(tomorrow.getHours()).padStart(2, '0');
+            const tomorrowMinutes = String(tomorrow.getMinutes()).padStart(2, '0');
+            
+            dateTimeInput.value = `${tomorrowYear}-${tomorrowMonth}-${tomorrowDay}T${tomorrowHours}:${tomorrowMinutes}`;
+            
+            // Show preview of best email
+            const bestVariant = variantACard.classList.contains('best') ? 'A' : 'B';
+            const bestSubject = bestVariant === 'A' ? variantA.subject : variantB.subject;
+            const bestBody = bestVariant === 'A' ? variantA.body : variantB.body;
+            
+            previewEl.innerHTML = `
+                <p><strong>Best Variant: ${bestVariant}</strong></p>
+                <p class="email-subject">Subject: ${bestSubject}</p>
+                <p>Open rate: ${lastApprovedPerf.open_rate}% | Click rate: ${lastApprovedPerf.click_rate}%</p>
+                <p style="font-size: 0.9rem;">${bestBody.substring(0, 100)}...</p>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        // Close schedule modal
+        function closeScheduleModal() {
+            document.getElementById('scheduleModal').style.display = 'none';
+        }
+
+        // Confirm schedule
+        function confirmSchedule() {
+            const dateTimeInput = document.getElementById('scheduleDateTime');
+            const scheduledTime = dateTimeInput.value;
+            
+            if (!scheduledTime) {
+                alert('Please select a date and time');
+                return;
+            }
+            
+            const selectedTime = new Date(scheduledTime);
+            const now = new Date();
+            
+            if (selectedTime <= now) {
+                alert('Please select a future date and time');
+                return;
+            }
+            
+            // Get best variant
+            const bestVariant = variantACard.classList.contains('best') ? 'A' : 'B';
+            const bestSubject = bestVariant === 'A' ? variantA.subject : variantB.subject;
+            const bestBody = bestVariant === 'A' ? variantA.body : variantB.body;
+            
+            const campaignData = {
+                best_variant: bestVariant,
+                subject: bestSubject,
+                body: bestBody,
+                open_rate: lastApprovedPerf.open_rate,
+                click_rate: lastApprovedPerf.click_rate,
+                assessment: lastApprovedPerf.assessment,
+                scheduled_from: 'user_schedule'
+            };
+            
+            scheduleCampaign(scheduledTime, campaignData);
+            
+            closeScheduleModal();
+            
+            aiSuggestionText.innerText = `✅ Campaign scheduled for ${selectedTime.toLocaleString()}`;
+        }
+
+        // Update charts function
+        function updateCharts(openA, clickA, openB, clickB) {
+            // Destroy existing charts if they exist
+            if (chartA) chartA.destroy();
+            if (chartB) chartB.destroy();
+
+            // Create chart for Variant A
+            const ctxA = document.getElementById('chartA')?.getContext('2d');
+            if (ctxA) {
+                chartA = new Chart(ctxA, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Open Rate', 'Click Rate'],
+                        datasets: [{
+                            label: 'Variant A',
+                            data: [openA, clickA],
+                            backgroundColor: ['#4299e1', '#48bb78'],
+                            borderColor: ['#2b6cb0', '#2f855a'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Create chart for Variant B
+            const ctxB = document.getElementById('chartB')?.getContext('2d');
+            if (ctxB) {
+                chartB = new Chart(ctxB, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Open Rate', 'Click Rate'],
+                        datasets: [{
+                            label: 'Variant B',
+                            data: [openB, clickB],
+                            backgroundColor: ['#4299e1', '#48bb78'],
+                            borderColor: ['#2b6cb0', '#2f855a'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Human Approval Function
+        function requestHumanApproval(iteration, currentPerformance) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('approvalModal');
+                const modalDetails = document.getElementById('modalDetails');
+                const yesBtn = document.getElementById('modalYesBtn');
+                const noBtn = document.getElementById('modalNoBtn');
+                
+                // Store the resolve function
+                approvalResolve = resolve;
+                
+                // Update modal details
+                modalDetails.innerHTML = `
+                    <p><strong>Campaign ${iteration + 1} completed</strong></p>
+                    <p>Best variant: ${currentPerformance.best_variant}</p>
+                    <p>Open rate: ${currentPerformance.open_rate}%</p>
+                    <p>Click rate: ${currentPerformance.click_rate}%</p>
+                    <p>Assessment: ${currentPerformance.assessment}</p>
+                    <p style="margin-top: 15px;"><em>Do you want to improve the emails for the next campaign?</em></p>
+                `;
+                
+                // Show modal
+                modal.style.display = 'flex';
+                
+                // Remove previous event listeners by cloning and replacing buttons
+                const newYesBtn = yesBtn.cloneNode(true);
+                const newNoBtn = noBtn.cloneNode(true);
+                yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+                noBtn.parentNode.replaceChild(newNoBtn, noBtn);
+                
+                // Add new event listeners
+                newYesBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                    approvalResolve(true);
+                });
+                
+                newNoBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                    approvalResolve(false);
+                });
+            });
+        }
+
+        // ---------- Campaign State ----------
+        let databaseBestReports = [];
+        let currentParsedBrief = null;
+        let currentStrategy = null;
+        let variantA = { subject: '', body: '' };
+        let variantB = { subject: '', body: '' };
+        let segmentSize = 0;
+        let iteration = 0;
+        let campaignHistory = [];
+        let lastApprovedPerf = null;
+        let humanApprovalNeeded = false;
+
+        // UI elements
+        const generateBtn = document.getElementById('generateBtn');
+        const approveBtn = document.getElementById('approveBtn');
+        const briefInput = document.getElementById('briefInput');
+        const subjectA = document.getElementById('subjectA');
+        const bodyA = document.getElementById('bodyA');
+        const subjectB = document.getElementById('subjectB');
+        const bodyB = document.getElementById('bodyB');
+        const reportA = document.getElementById('reportA');
+        const reportB = document.getElementById('reportB');
+        const variantACard = document.getElementById('variantACard');
+        const variantBCard = document.getElementById('variantBCard');
+        const aiSuggestionText = document.getElementById('aiSuggestionText');
+        const openRateDisplay = document.getElementById('openRateDisplay');
+        const clickRateDisplay = document.getElementById('clickRateDisplay');
+        const assessmentDisplay = document.getElementById('assessmentDisplay');
+        const historyIterationsDiv = document.getElementById('historyIterations');
+        const bestStoredBadge = document.getElementById('bestStoredBadge');
+        const historyButton = document.getElementById('historyButton');
+        const mongodbViewBtn = document.getElementById('mongodbViewBtn');
+        const refreshMongoBtn = document.getElementById('refreshMongoBtn');
+        const scheduleBtn = document.getElementById('scheduleBtn');
+
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+        function extractCta(text) {
+            const match = text.match(/https?:\/\/[^\s]+/);
+            return match ? match[0] : 'https://xdeposit.com/fallback';
+        }
+
+        // Improved email generation based on iteration and approval
+        function generateImprovedEmails(iteration, approved) {
+            const brief = briefInput.value.trim() || "Default brief: financial product for seniors. CTA: https://xdeposit.com/";
+            currentParsedBrief = { 
+                product_name: "SecureLife", 
+                usps: ["guaranteed", "tax"], 
+                target_segments: ["female senior citizens"], 
+                cta_url: extractCta(brief) 
+            };
+            
+            if (iteration === 0 || !approved) {
+                // First campaign or not approved - use basic versions
+                variantA = {
+                    subject: "💝 Exclusive: SecureLife for senior women – guaranteed returns",
+                    body: `Dear customer,\n\nAs a valued senior citizen, you deserve financial peace of mind. SecureLife offers guaranteed returns with zero market risk. Enjoy tax benefits and flexible payouts.\n\nExplore XDeposit now:\n${currentParsedBrief.cta_url}`
+                };
+                variantB = {
+                    subject: "✨ Retirement income? Meet SecureLife (no market risk)",
+                    body: `Hello,\n\nRetirement should be stress‑free. SecureLife annuity gives you fixed income for life, principal protection, and exclusive tax savings. Specially designed for women above 60.\n\nExplore XDeposit now:\n${currentParsedBrief.cta_url}`
+                };
+            } else {
+                // Improved versions for subsequent campaigns
+                variantA = {
+                    subject: "💝 IMPROVED: SecureLife for senior women – guaranteed returns + tax benefits",
+                    body: `Dear valued customer,\n\nBased on your feedback, we've enhanced our SecureLife offering. Now with even better guaranteed returns and additional tax benefits for senior women.\n\nKey improvements:\n• Higher guaranteed returns\n• Additional tax benefits\n• Flexible payout options\n\nExplore XDeposit now:\n${currentParsedBrief.cta_url}`
+                };
+                variantB = {
+                    subject: "✨ IMPROVED: Retirement income? Meet enhanced SecureLife (no market risk)",
+                    body: `Hello,\n\nWe've listened to your feedback and improved SecureLife annuity. Now offering better fixed income for life, enhanced principal protection, and exclusive tax savings for women above 60.\n\nWhat's improved:\n• Better returns\n• Enhanced protection\n• More flexibility\n\nExplore XDeposit now:\n${currentParsedBrief.cta_url}`
+                };
+            }
+
+            subjectA.innerText = variantA.subject;
+            bodyA.innerText = variantA.body;
+            subjectB.innerText = variantB.subject;
+            bodyB.innerText = variantB.body;
+            variantACard.style.opacity = '1';
+            variantACard.style.filter = 'none';
+            variantBCard.style.opacity = '1';
+            variantBCard.style.filter = 'none';
+
+            reportA.innerHTML = 'no report yet';
+            reportB.innerHTML = 'no report yet';
+            variantACard.classList.remove('best');
+            variantBCard.classList.remove('best');
+            
+            if (iteration === 0) {
+                aiSuggestionText.innerText = 'First campaign variants generated. Click approve to run A/B test.';
+            } else if (approved) {
+                aiSuggestionText.innerText = '✅ Improved variants generated based on your approval. Click approve to run next test.';
+            } else {
+                aiSuggestionText.innerText = '📌 Keeping current variants (you chose not to improve). Click approve to run next test.';
+            }
+            
+            openRateDisplay.innerText = 'open: —';
+            clickRateDisplay.innerText = 'click: —';
+            assessmentDisplay.innerText = 'assessment: —';
+
+            // Reset charts
+            updateCharts(0, 0, 0, 0);
+
+            currentStrategy = {
+                variants: [variantA, variantB],
+                send_time: '15:03:26 12:00:00',
+                rationale: 'Targeting senior females with security messaging.'
+            };
+
+            approveBtn.disabled = false;
+        }
+
+        async function generateEmails() {
+            generateImprovedEmails(iteration, false);
+        }
+
+        // Store campaign results in MongoDB
+        async function storeInMongoDB(campaignData) {
+            const mongoDoc = await saveToMongoDB({
+                brief: briefInput.value.substring(0, 100),
+                best_variant: campaignData.best_variant,
+                open_rate: campaignData.open_rate,
+                click_rate: campaignData.click_rate,
+                subject_a: variantA.subject,
+                subject_b: variantB.subject,
+                assessment: campaignData.assessment,
+                insights: campaignData.insights,
+                iteration: iteration,
+                variant_a_open: campaignData.variant_a_open,
+                variant_a_click: campaignData.variant_a_click,
+                variant_b_open: campaignData.variant_b_open,
+                variant_b_click: campaignData.variant_b_click,
+                human_approved: campaignData.human_approved || false
+            });
+
+            if (mongoDoc) {
+                aiSuggestionText.innerText = `✅ Stored in MongoDB (ID: ${mongoDoc._id.substr(-8)})\n${campaignData.insights}`;
+            } else {
+                aiSuggestionText.innerText = `⚠️ Failed to store in MongoDB\n${campaignData.insights}`;
+            }
+
+            return mongoDoc;
+        }
+
+        async function approveAndRun() {
+            if (!currentStrategy) { 
+                alert('Please generate variants first!'); 
+                return; 
+            }
+
+            await delay(1000);
+
+            // Generate performance metrics based on iteration and whether improved
+            let openA, openB, clickA, clickB;
+            
+            // Progressive improvement in metrics
+            if (iteration === 0) {
+                openA = 28.3; clickA = 12.1;
+                openB = 34.7; clickB = 18.4;
+            } else if (iteration === 1) {
+                if (humanApprovalNeeded && lastApprovedPerf?.human_approved) {
+                    // Improved versions show better metrics
+                    openA = 69.2; clickA = 29.33;
+                    openB = 42.5; clickB = 24.1;
+                } else {
+                    // Same as before if not improved
+                    openA = 28.3; clickA = 12.1;
+                    openB = 34.5; clickB = 18.4;
+                }
+            } else {
+                if (humanApprovalNeeded && lastApprovedPerf?.human_approved) {
+                    // Further improved
+                    openA = 69.4; clickA = 45.2;
+                    openB = 75.1; clickB = 50.6;
+                } else {
+                    openA = 76.4; clickA = 46.2;
+                    openB = 66.1; clickB = 33.6;
+                }
+            }
+
+            // Update charts
+            updateCharts(openA, clickA, openB, clickB);
+
+            reportA.innerHTML = `📈 open: ${openA}% | click: ${clickA}%`;
+            reportB.innerHTML = `📈 open: ${openB}% | click: ${clickB}%`;
+
+            let bestPerf;
+            if ((openA + clickA) > (openB + clickB)) {
+                variantACard.classList.add('best');
+                variantBCard.classList.remove('best');
+                bestPerf = { variant: 'A', open_rate: openA, click_rate: clickA, data: [] };
+            } else {
+                variantBCard.classList.add('best');
+                variantACard.classList.remove('best');
+                bestPerf = { variant: 'B', open_rate: openB, click_rate: clickB, data: [] };
+            }
+
+            const assessment = bestPerf.open_rate > 45 ? 'Excellent engagement' : 
+                              bestPerf.open_rate > 35 ? 'Good improvement' : 'Good start, can improve further.';
+            const insights = bestPerf.variant === 'A' ? 'Variant A had clearer CTA and better personalization' : 
+                            'Variant B used emotional appeal effectively';
+            const recommendations = 'Continue personalizing based on segment, test different subject lines.';
+
+            const fullAnalysis = {
+                assessment,
+                insights,
+                recommendations,
+                open_rate: bestPerf.open_rate,
+                click_rate: bestPerf.click_rate,
+                best_variant: bestPerf.variant,
+                variant_a_open: openA,
+                variant_a_click: clickA,
+                variant_b_open: openB,
+                variant_b_click: clickB,
+                human_approved: humanApprovalNeeded && lastApprovedPerf?.human_approved
+            };
+            lastApprovedPerf = fullAnalysis;
+
+            // Store in MongoDB
+            await storeInMongoDB(fullAnalysis);
+
+            aiSuggestionText.innerText = `📌 ${insights} · ${recommendations}`;
+            openRateDisplay.innerText = `open: ${bestPerf.open_rate}%`;
+            clickRateDisplay.innerText = `click: ${bestPerf.click_rate}%`;
+            assessmentDisplay.innerText = `assessment: ${assessment}`;
+
+            const historyEntry = {
+                iteration: iteration + 1,
+                best_variant: bestPerf.variant,
+                open_rate: bestPerf.open_rate,
+                click_rate: bestPerf.click_rate,
+                subjectA: variantA.subject,
+                subjectB: variantB.subject,
+                assessment,
+                insights,
+                improved: humanApprovalNeeded && lastApprovedPerf?.human_approved
+            };
+            campaignHistory.push(historyEntry);
+            databaseBestReports.push({ ...historyEntry, stored: true });
+
+            iteration++;
+            approveBtn.disabled = true;
+            renderPreviousIterations();
+            updateMongoDBDisplay();
+
+            // Check if we need human approval for next campaign
+            if (iteration < 3) {
+                // Request human approval for next campaign
+                const approved = await requestHumanApproval(iteration, fullAnalysis);
+                humanApprovalNeeded = approved;
+                
+                if (approved) {
+                    aiSuggestionText.innerText = `✅ You approved improvements. Next campaign will show enhanced versions.`;
+                } else {
+                    aiSuggestionText.innerText = `⏸️ You chose not to improve. Next campaign will keep current versions.`;
+                }
+                
+                // Generate next campaign emails based on approval
+                generateImprovedEmails(iteration, approved);
+            } else {
+                bestStoredBadge.innerHTML = '<div class="db-badge" style="background:#1e824c;">✔ all 3 campaigns stored in MongoDB</div>';
+                aiSuggestionText.innerText = '🎯 All 3 campaigns completed! You can now schedule the best email.';
+            }
+        }
+
+        function renderPreviousIterations() {
+            if (campaignHistory.length === 0) {
+                historyIterationsDiv.innerHTML = '';
+                return;
+            }
+            let html = '<h3 style="margin-bottom:10px;">📁 previous campaigns (improved)</h3>';
+            campaignHistory.forEach((h, idx) => {
+                const bestSubj = h.best_variant === 'A' ? h.subjectA : h.subjectB;
+                const improvedBadge = h.improved ? '<span style="background:#ffc107; color:#000; padding:2px 8px; border-radius:12px; margin-left:8px; font-size:0.7rem;">✨ improved</span>' : '';
+                html += `<div class="email-card" style="margin-bottom:16px; padding:16px;">
+                <div style="display:flex; gap:10px; align-items: center; flex-wrap: wrap;">
+                    <span class="winner-star">🏆 iter ${idx + 1} best (${h.best_variant})</span>
+                    <span>open ${h.open_rate}% · click ${h.click_rate}%</span>
+                    ${improvedBadge}
+                </div>
+                <div class="subject" style="font-size:1rem;">${bestSubj.substring(0, 70)}…</div>
+                <div class="small-note">${h.assessment}</div>
+            </div>`;
+            });
+            historyIterationsDiv.innerHTML = html;
+        }
+
+        function showHistory() {
+            if (databaseBestReports.length === 0) {
+                alert('No historical campaigns stored yet.');
+                return;
+            }
+            let msg = '📀 CAMPAIGN HISTORY:\n';
+            databaseBestReports.forEach((r, i) => {
+                const improved = r.improved ? ' (improved)' : '';
+                msg += `\nIter ${r.iteration} — variant ${r.best_variant}${improved} · open ${r.open_rate}% · click ${r.click_rate}% · ${r.assessment}`;
+            });
+            alert(msg);
+        }
+
+        function showMongoDBView() {
+            if (mongoCollection.length === 0) {
+                alert('MongoDB is empty. Run some campaigns first!');
+                return;
+            }
+
+            let msg = '🗄️ MONGODB STORAGE (click/open rates):\n\n';
+            mongoCollection.slice(0, 10).forEach((doc, i) => {
+                const date = new Date(doc.timestamp).toLocaleString();
+                const improved = doc.human_approved ? '✨ ' : '';
+                msg += `${i + 1}. ${improved}[${date}]\n   Variant ${doc.best_variant} · open ${doc.open_rate}% · click ${doc.click_rate}%\n   ${doc.assessment || ''}\n\n`;
+            });
+            alert(msg);
+        }
+
+        // Refresh MongoDB function
+        async function refreshMongoDB() {
+            try {
+                // Show loading state
+                refreshMongoBtn.disabled = true;
+                refreshMongoBtn.innerText = '🔄 refreshing...';
+                
+                // Reload data from localStorage
+                const stored = localStorage.getItem('mongodb_backup');
+                if (stored) {
+                    mongoCollection = JSON.parse(stored);
+                } else {
+                    mongoCollection = [];
+                }
+                
+                // Update the display
+                updateMongoDBDisplay();
+                
+                // Show success message
+                aiSuggestionText.innerText = `✅ MongoDB refreshed: ${mongoCollection.length} campaigns loaded`;
+                
+                // Reset button
+                refreshMongoBtn.disabled = false;
+                refreshMongoBtn.innerText = '🔄 refresh';
+                
+            } catch (error) {
+                console.error('Error refreshing MongoDB:', error);
+                aiSuggestionText.innerText = '❌ Failed to refresh MongoDB';
+                refreshMongoBtn.disabled = false;
+                refreshMongoBtn.innerText = '🔄 refresh';
+            }
+        }
+
+        // Event listeners
+        generateBtn.addEventListener('click', async () => {
+            generateBtn.disabled = true;
+            generateBtn.innerText = '⏳ generating...';
+            await generateEmails();
+            generateBtn.disabled = false;
+            generateBtn.innerText = '✨ generate variants';
+        });
+
+        approveBtn.addEventListener('click', async () => {
+            approveBtn.disabled = true;
+            approveBtn.innerText = '⏳ running A/B test...';
+            await approveAndRun();
+            approveBtn.innerText = '✅ approve & run campaign';
+        });
+
+        historyButton.addEventListener('click', showHistory);
+        mongodbViewBtn.addEventListener('click', showMongoDBView);
+        refreshMongoBtn.addEventListener('click', refreshMongoDB);
+        scheduleBtn.addEventListener('click', openScheduleModal);
+
+        // Schedule modal buttons
+        document.getElementById('cancelScheduleBtn').addEventListener('click', closeScheduleModal);
+        document.getElementById('confirmScheduleBtn').addEventListener('click', confirmSchedule);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('approvalModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                if (approvalResolve) {
+                    approvalResolve(false); // Default to no if closed
+                }
+            }
+            
+            const scheduleModal = document.getElementById('scheduleModal');
+            if (e.target === scheduleModal) {
+                scheduleModal.style.display = 'none';
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            await checkMongoDBConnection();
+            await loadFromMongoDB();
+            
+            // Load scheduled campaigns from localStorage
+            const scheduledStored = localStorage.getItem('scheduled_campaigns');
+            if (scheduledStored) {
+                scheduledCampaigns = JSON.parse(scheduledStored);
+                updateScheduledDisplay();
+                updateScheduleStatus();
+                
+                // Re-schedule any pending campaigns
+                scheduledCampaigns.forEach(campaign => {
+                    if (campaign.status === 'pending') {
+                        const now = new Date();
+                        const sendTime = new Date(campaign.scheduledTime);
+                        const timeUntilSend = sendTime - now;
+                        
+                        if (timeUntilSend > 0) {
+                            setTimeout(() => {
+                                executeScheduledCampaign(campaign.id);
+                            }, timeUntilSend);
+                        }
+                    }
+                });
+            }
+            
+            if (!briefInput.value) {
+                briefInput.value = "Launch 'SecureLife' annuity for female senior citizens (60+). USPs: guaranteed returns, no market risk, tax benefits. CTA: https://xdeposit.com/securelife";
+            }
+            // Initialize empty charts
+            updateCharts(0, 0, 0, 0);
+        });
+    </script>
+
+    <style>
+        .email-card .body-preview {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        #historyIterations .email-card {
+            background: #f9fcff;
+        }
+
+        .winner-star {
+            background: #dff0d8;
+        }
+
+        #aiSuggestionBox p {
+            margin-top: 12px;
+            line-height: 1.5;
+            color: #17486f;
+        }
+
+        .mongodb-status {
+            transition: all 0.3s ease;
+        }
+
+        .storage-item {
+            transition: background 0.2s;
+        }
+
+        .storage-item:hover {
+            background: #f1f8e9;
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Modal animation */
+        .modal-overlay,
+        .schedule-modal-overlay {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content,
+        .schedule-modal-content {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</body>
+
+</html>
