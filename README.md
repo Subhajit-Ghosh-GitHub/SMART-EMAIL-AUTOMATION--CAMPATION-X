@@ -1,11 +1,4 @@
 🚀 Revolution1: AI-Powered Email Marketing Optimization System
-<div align="center">
-https://img.shields.io/badge/version-1.0.0-blue
-https://img.shields.io/badge/Python-3.9+-green
-https://img.shields.io/badge/FastAPI-0.95+-teal
-https://img.shields.io/badge/MongoDB-6.0+-brightgreen
-https://img.shields.io/badge/Gemini%2520AI-Powered-orange
-
 Intelligent Email Marketing • Automated A/B Testing • AI-Driven Optimization</div>
 
 📋 Overview
